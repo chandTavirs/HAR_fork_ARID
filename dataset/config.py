@@ -6,6 +6,8 @@ def get_config(name):
 
     if name.upper() == 'ARID':
         config['num_classes'] = 11
+    elif name.upper() == 'HAR':
+        config['num_classes'] = 10
     else:
         logging.error("Configs for dataset '{}'' not found".format(name))
         raise NotImplemented

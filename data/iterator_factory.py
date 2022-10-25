@@ -72,6 +72,68 @@ def get_arid(data_root='./dataset/ARID',
 
 	return (train, val)
 
+def get_harid(data_root='./dataset/HAR',
+			   clip_length=8,
+			   segments=3,
+			   train_interval=2,
+			   val_interval=2,
+			   mean=[0.485, 0.456, 0.406],
+			   std=[0.229, 0.224, 0.225],
+			   seed=torch.distributed.get_rank() if torch.distributed.is_initialized() else 0,
+			   **kwargs):
+	""" data iter for ucf-101
+	"""
+	logging.debug("VideoIter:: clip_length = {}, interval = [train: {}, val: {}], seed = {}".format( \
+				clip_length, train_interval, val_interval, seed))
+
+	normalize = transforms.Normalize(mean=mean, std=std)
+
+	train_sampler = sampler.RandomSampling(num=clip_length, interval=train_interval, speed=[1.0, 1.0], seed=(seed+0))
+	# train_sampler = sampler.SegmentalSampling(num_per_seg=clip_length, segments=segments, interval=train_interval, fix_cursor=False, shuffle=True, seed=(seed+0))
+	train = VideoIter(video_prefix=os.path.join(data_root, 'train'),
+					  txt_list=os.path.join(data_root, 'train.txt'),
+					  sampler=train_sampler,
+					  force_color=True,
+					  video_transform=transforms.Compose([
+										 transforms.RandomScale(make_square=True,
+																aspect_ratio=[0.8, 1./0.8],
+																slen=[224, 288]),
+																# slen=[112, 144]), # For C3D only
+										 # transforms.Resize((112, 112)),
+										 transforms.RandomCrop((224, 224)), # insert a resize if needed
+										 # transforms.RandomCrop((112, 112)), # For C3D only
+										 transforms.RandomHorizontalFlip(),
+										 transforms.RandomHLS(vars=[15, 35, 25]),
+										 transforms.ToTensor(),
+										 normalize,
+									  ],
+									  aug_seed=(seed+1)),
+					  name='train',
+					  shuffle_list_seed=(seed+2),
+					  )
+
+	val_sampler = sampler.SequentialSampling(num=clip_length, interval=val_interval, fix_cursor=True, shuffle=True)
+	# val_sampler = sampler.SegmentalSampling(num_per_seg=clip_length, segments=segments, interval=val_interval, fix_cursor=True, shuffle=True)
+	val   = VideoIter(video_prefix=os.path.join(data_root, 'validate'),
+					  txt_list=os.path.join(data_root, 'validate.txt'),
+					  sampler=val_sampler,
+					  force_color=True,
+					  video_transform=transforms.Compose([
+										 # transforms.Resize((128, 128)), # For C3D Only
+										 # transforms.CenterCrop((112, 112)), # For C3D Only
+										 # transforms.Resize((256, 256)),
+						  				 transforms.RandomScale(make_square=False,
+											aspect_ratio=[1.0, 1.0],
+											slen=[256, 256]),
+										 transforms.CenterCrop((224, 224)),
+										 transforms.ToTensor(),
+										 normalize,
+									  ]),
+					  name='test',
+					  )
+
+	return (train, val)
+
 
 def get_arid_flow(data_root='./dataset/ARID',
 			   clip_length=8,
@@ -130,12 +192,16 @@ def get_arid_flow(data_root='./dataset/ARID',
 	return (train, val)
 
 
-def creat(name, batch_size, use_flow, num_workers=16, **kwargs):
+def create(name, batch_size, use_flow, num_workers=16, **kwargs):
 
 	if name.upper() == 'ARID' and not use_flow:
 		train, val = get_arid(**kwargs)
 	elif name.upper() == 'ARID' and use_flow:
 		train, val = get_arid_flow(**kwargs)
+	elif name.upper() == 'HAR':
+		train, val = get_harid(**kwargs)
+	# elif name.upper() == 'HAR' and use_flow:
+	# 	train, val = get_harid_flow(**kwargs)
 	else:
 		assert NotImplementedError("iter {} not found".format(name))
 

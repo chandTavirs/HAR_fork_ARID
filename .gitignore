@@ -108,3 +108,6 @@ venv.bak/
 
 # miscellaneous output files
 *.out
+
+dataset/HAR
+.idea/

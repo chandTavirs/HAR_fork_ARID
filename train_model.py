@@ -26,15 +26,15 @@ def train_model(sym_net, model_prefix, dataset, input_conf,
     iter_seed = torch.initial_seed() \
                 + (torch.distributed.get_rank() * 10 if distributed else 100) \
                 + max(0, resume_epoch) * 100
-    train_iter, eval_iter = iterator_factory.creat(name=dataset,
-                                                   batch_size=batch_size,
-                                                   clip_length=clip_length,
-                                                   train_interval=train_frame_interval,
-                                                   val_interval=val_frame_interval,
-                                                   mean=input_conf['mean'],
-                                                   std=input_conf['std'],
-                                                   seed=iter_seed,
-                                                   use_flow=use_flow)
+    train_iter, eval_iter = iterator_factory.create(name=dataset,
+                                                    batch_size=batch_size,
+                                                    clip_length=clip_length,
+                                                    train_interval=train_frame_interval,
+                                                    val_interval=val_frame_interval,
+                                                    mean=input_conf['mean'],
+                                                    std=input_conf['std'],
+                                                    seed=iter_seed,
+                                                    use_flow=use_flow)
     # wapper (dynamic model)
     net = model(net=sym_net,
                 criterion=torch.nn.CrossEntropyLoss().cuda(),

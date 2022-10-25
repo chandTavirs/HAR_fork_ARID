@@ -44,7 +44,7 @@ parser.add_argument('--network', type=str, default='RESNEXT',
 # - step 2: load the 2D pretrained model if `pretrained_2d' is True
 # - step 3: load the 3D pretrained model if `pretrained_3d' is defined
 # - step 4: resume if `resume_epoch' >= 0
-parser.add_argument('--pretrained_2d', type=bool, default=True,
+parser.add_argument('--pretrained_2d', type=bool, default=False,
                     help="load default 2D pretrained model.")
 parser.add_argument('--pretrained_3d', type=str, 
                     default=None,
